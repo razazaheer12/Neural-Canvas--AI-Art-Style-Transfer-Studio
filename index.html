@@ -1,147 +1,329 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neural Canvas - AI Art Style Transfer Studio</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neural Canvas — AI Art Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="app">
-        <header class="header">
-            <div class="logo">🎨 Neural Canvas</div>
-            <button class="theme-toggle" id="themeToggle">🌙</button>
-        </header>
+  <!-- Ambient background -->
+  <div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <canvas class="noise-canvas" id="noiseCanvas"></canvas>
+  </div>
 
-        <aside class="sidebar">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📁</div>
-                <div class="upload-text">Drag & drop your image here</div>
-                <div style="margin: 1rem 0;">or</div>
-                <button class="btn" onclick="document.getElementById('fileInput').click()">
-                    Choose Image
-                </button>
-                <input type="file" id="fileInput" class="file-input" accept="image/*">
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 2L28 8V24L16 30L4 24V8L16 2Z" stroke="url(#logoGrad)" stroke-width="1.5" fill="none"/>
+            <circle cx="16" cy="16" r="5" fill="url(#logoGrad)" opacity="0.8"/>
+            <path d="M16 8V12M16 20V24M8 16H12M20 16H24" stroke="url(#logoGrad)" stroke-width="1.5" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="logoGrad" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#a78bfa"/>
+                <stop offset="100%" stop-color="#34d399"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="logo-text">Neural<em>Canvas</em></span>
+      </div>
+
+      <nav class="header-nav">
+        <span class="nav-tag">v2.0</span>
+        <span class="nav-divider"></span>
+        <span class="nav-label">AI Art Studio</span>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-btn" id="themeToggle" title="Toggle theme">
+          <svg id="moonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+
+      <!-- Upload Zone -->
+      <div class="upload-zone" id="uploadArea">
+        <input type="file" id="fileInput" class="file-input" accept="image/*" />
+        <div class="upload-inner">
+          <div class="upload-gfx">
+            <div class="upload-ring upload-ring-1"></div>
+            <div class="upload-ring upload-ring-2"></div>
+            <div class="upload-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
             </div>
+          </div>
+          <p class="upload-title">Drop your image</p>
+          <p class="upload-sub">or click to browse</p>
+          <div class="upload-formats">PNG · JPG · WEBP · GIF</div>
+        </div>
+      </div>
 
-            <div class="control-section">
-                <div class="section-title">Recent Projects</div>
-                <button class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
-                    🖼️ Sunset Landscape
-                </button>
-                <button class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
-                    🎭 Portrait Study
-                </button>
-                <button class="btn btn-secondary" style="width: 100%;">
-                    🌸 Abstract Art
-                </button>
-            </div>
+      <!-- Image Info (hidden until loaded) -->
+      <div class="image-info" id="imageInfo" style="display:none">
+        <div class="info-thumb-wrap">
+          <img id="infoThumb" class="info-thumb" alt="" />
+          <div class="info-thumb-overlay">
+            <button class="ghost-btn" onclick="document.getElementById('fileInput').click()">Change</button>
+          </div>
+        </div>
+        <div class="info-meta">
+          <p id="infoName" class="info-name">—</p>
+          <p id="infoDims" class="info-dims">—</p>
+        </div>
+      </div>
 
-            <div class="control-section">
-                <div class="section-title">Export Options</div>
-                <button class="btn" id="downloadBtn" style="width: 100%; margin-bottom: 0.5rem;" disabled>
-                    💾 Download PNG
-                </button>
-                <button class="btn btn-secondary" id="shareBtn" style="width: 100%;" disabled>
-                    📤 Share Creation
-                </button>
-            </div>
-        </aside>
+      <!-- Export -->
+      <div class="sidebar-section">
+        <div class="section-label">Export</div>
+        <div class="export-btns">
+          <button class="export-btn" id="downloadBtn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PNG
+          </button>
+          <button class="export-btn export-btn-sec" id="shareBtn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+          </button>
+        </div>
+      </div>
 
-        <main class="canvas-area">
-            <div class="canvas-container" id="canvasContainer" style="display: none;">
-                <canvas id="mainCanvas"></canvas>
-                <div class="canvas-overlay">
-                    <button class="btn" id="resetBtn">↺ Reset</button>
-                    <button class="btn btn-secondary" id="compareBtn">👁️ Compare</button>
-                </div>
-            </div>
+      <!-- Stats -->
+      <div class="stats-strip" id="statsStrip" style="display:none">
+        <div class="stat">
+          <span class="stat-val" id="statFilter">—</span>
+          <span class="stat-label">Filter</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat">
+          <span class="stat-val" id="statSize">—</span>
+          <span class="stat-label">Size</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat">
+          <span class="stat-val" id="statTime">—</span>
+          <span class="stat-label">ms</span>
+        </div>
+      </div>
 
-            <div class="placeholder" id="placeholder">
-                <div class="placeholder-icon">🎨</div>
-                <h2>Welcome to Neural Canvas</h2>
-                <p>Upload an image to start creating amazing art transformations</p>
-            </div>
+    </aside>
 
-            <div class="before-after" id="beforeAfter" style="display: none;">
-                <div class="image-preview">
-                    <img id="beforeImg" alt="Before">
-                    <div class="image-label">Before</div>
-                </div>
-                <div class="image-preview">
-                    <img id="afterImg" alt="After">
-                    <div class="image-label">After</div>
-                </div>
-            </div>
-        </main>
+    <!-- Canvas Area -->
+    <main class="canvas-area">
 
-        <aside class="controls">
-            <div class="control-section">
-                <div class="section-title">Art Filters</div>
-                <div class="filter-grid">
-                    <button class="filter-btn active" data-filter="none">Original</button>
-                    <button class="filter-btn" data-filter="vintage">Vintage</button>
-                    <button class="filter-btn" data-filter="oil">Oil Paint</button>
-                    <button class="filter-btn" data-filter="watercolor">Watercolor</button>
-                    <button class="filter-btn" data-filter="sketch">Sketch</button>
-                    <button class="filter-btn" data-filter="neon">Neon</button>
-                    <button class="filter-btn" data-filter="dramatic">Dramatic</button>
-                    <button class="filter-btn" data-filter="dreamy">Dreamy</button>
-                </div>
-            </div>
+      <!-- Toolbar -->
+      <div class="canvas-toolbar" id="canvasToolbar" style="opacity:0; pointer-events:none">
+        <div class="toolbar-group">
+          <button class="tool-btn active" id="viewBtn" data-mode="canvas">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Preview
+          </button>
+          <button class="tool-btn" id="compareBtn" data-mode="compare">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="3" x2="12" y2="21"/><path d="M3 9l4-4-4-4M21 15l-4 4 4 4"/></svg>
+            Compare
+          </button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tool-btn" id="resetBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+            Reset
+          </button>
+        </div>
+      </div>
 
-            <div class="control-section">
-                <div class="section-title">Adjustments</div>
+      <!-- Placeholder -->
+      <div class="empty-state" id="placeholder">
+        <div class="empty-gfx">
+          <div class="empty-ring r1"></div>
+          <div class="empty-ring r2"></div>
+          <div class="empty-ring r3"></div>
+          <div class="empty-center">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24 4L44 14V34L24 44L4 34V14L24 4Z" stroke="url(#emptyGrad)" stroke-width="1.5" fill="none"/>
+              <circle cx="24" cy="24" r="8" fill="none" stroke="url(#emptyGrad)" stroke-width="1.5"/>
+              <circle cx="24" cy="24" r="3" fill="url(#emptyGrad)"/>
+              <defs>
+                <linearGradient id="emptyGrad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#a78bfa"/>
+                  <stop offset="1" stop-color="#34d399"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+        <h2 class="empty-title">Transform Your Vision</h2>
+        <p class="empty-sub">Upload an image to begin your artistic journey with Neural Canvas</p>
+        <button class="cta-btn" onclick="document.getElementById('fileInput').click()">
+          <span>Choose Image</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
 
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Intensity</span>
-                        <span id="intensityValue">100%</span>
-                    </div>
-                    <input type="range" class="slider" id="intensitySlider" min="0" max="100" value="100">
-                </div>
+      <!-- Canvas -->
+      <div class="canvas-wrap" id="canvasContainer" style="display:none">
+        <canvas id="mainCanvas"></canvas>
+        <div class="canvas-glow"></div>
+      </div>
 
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Contrast</span>
-                        <span id="contrastValue">0%</span>
-                    </div>
-                    <input type="range" class="slider" id="contrastSlider" min="-50" max="50" value="0">
-                </div>
+      <!-- Compare view -->
+      <div class="compare-view" id="compareView" style="display:none">
+        <div class="compare-pane">
+          <img id="beforeImg" alt="Original" />
+          <div class="pane-label">Original</div>
+        </div>
+        <div class="compare-divider">
+          <div class="divider-line"></div>
+          <div class="divider-pill">vs</div>
+          <div class="divider-line"></div>
+        </div>
+        <div class="compare-pane">
+          <img id="afterImg" alt="After" />
+          <div class="pane-label styled">Styled</div>
+        </div>
+      </div>
 
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Brightness</span>
-                        <span id="brightnessValue">0%</span>
-                    </div>
-                    <input type="range" class="slider" id="brightnessSlider" min="-50" max="50" value="0">
-                </div>
+      <!-- Processing -->
+      <div class="processing-overlay" id="processingOverlay" style="display:none">
+        <div class="proc-inner">
+          <div class="proc-spinner">
+            <div class="spin-ring"></div>
+            <div class="spin-dot"></div>
+          </div>
+          <p class="proc-label">Rendering<span class="proc-dots"><span>.</span><span>.</span><span>.</span></span></p>
+        </div>
+      </div>
 
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Saturation</span>
-                        <span id="saturationValue">0%</span>
-                    </div>
-                    <input type="range" class="slider" id="saturationSlider" min="-100" max="100" value="0">
-                </div>
+    </main>
 
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Blur</span>
-                        <span id="blurValue">0px</span>
-                    </div>
-                    <input type="range" class="slider" id="blurSlider" min="0" max="10" value="0">
-                </div>
-            </div>
+    <!-- Right Controls -->
+    <aside class="controls">
 
+      <!-- Filters -->
+      <div class="ctrl-section">
+        <div class="section-label">
+          <span>Art Filters</span>
+          <span class="active-filter-badge" id="activeBadge">Original</span>
+        </div>
+        <div class="filter-grid">
+          <button class="filter-card active" data-filter="none">
+            <div class="filter-preview fp-none"></div>
+            <span>Original</span>
+          </button>
+          <button class="filter-card" data-filter="vintage">
+            <div class="filter-preview fp-vintage"></div>
+            <span>Vintage</span>
+          </button>
+          <button class="filter-card" data-filter="oil">
+            <div class="filter-preview fp-oil"></div>
+            <span>Oil Paint</span>
+          </button>
+          <button class="filter-card" data-filter="watercolor">
+            <div class="filter-preview fp-watercolor"></div>
+            <span>Watercolor</span>
+          </button>
+          <button class="filter-card" data-filter="sketch">
+            <div class="filter-preview fp-sketch"></div>
+            <span>Sketch</span>
+          </button>
+          <button class="filter-card" data-filter="neon">
+            <div class="filter-preview fp-neon"></div>
+            <span>Neon</span>
+          </button>
+          <button class="filter-card" data-filter="dramatic">
+            <div class="filter-preview fp-dramatic"></div>
+            <span>Dramatic</span>
+          </button>
+          <button class="filter-card" data-filter="dreamy">
+            <div class="filter-preview fp-dreamy"></div>
+            <span>Dreamy</span>
+          </button>
+        </div>
+      </div>
 
-        </aside>
-    </div>
+      <!-- Adjustments -->
+      <div class="ctrl-section">
+        <div class="section-label">Adjustments</div>
 
-    <div class="processing" id="processingOverlay" style="display: none;">
-        <div class="spinner"></div>
-        <div>Processing your masterpiece...</div>
-    </div>
-    <script src="script.js"></script>
+        <div class="slider-row">
+          <div class="slider-head">
+            <span class="slider-name">Intensity</span>
+            <span class="slider-val" id="intensityValue">100%</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" class="range" id="intensitySlider" min="0" max="100" value="100" />
+            <div class="range-fill" id="intensityFill" style="width:100%"></div>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-head">
+            <span class="slider-name">Contrast</span>
+            <span class="slider-val" id="contrastValue">0%</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" class="range" id="contrastSlider" min="-50" max="50" value="0" />
+            <div class="range-fill" id="contrastFill" style="width:50%"></div>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-head">
+            <span class="slider-name">Brightness</span>
+            <span class="slider-val" id="brightnessValue">0%</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" class="range" id="brightnessSlider" min="-50" max="50" value="0" />
+            <div class="range-fill" id="brightnessFill" style="width:50%"></div>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-head">
+            <span class="slider-name">Saturation</span>
+            <span class="slider-val" id="saturationValue">0%</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" class="range" id="saturationSlider" min="-100" max="100" value="0" />
+            <div class="range-fill" id="saturationFill" style="width:50%"></div>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-head">
+            <span class="slider-name">Blur</span>
+            <span class="slider-val" id="blurValue">0px</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" class="range" id="blurSlider" min="0" max="10" value="0" />
+            <div class="range-fill" id="blurFill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <button class="reset-adj-btn" id="resetAdjBtn">Reset adjustments</button>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
 </body>
 </html>
